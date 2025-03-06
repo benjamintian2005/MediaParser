@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Parser</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .loading {
+            display: none;
+        }
+        .loading.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">Media Parser</h1>
+        
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+            <div class="mb-6">
+                <label for="url" class="block text-sm font-medium text-gray-700 mb-2">Enter your profile URL:</label>
+                <div class="flex gap-2">
+                    <input type="url" id="url" 
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="https://letterboxd.com/username">
+                    <button onclick=parseUrl() 
+                            class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Parse
+                    </button>
+                </div>
+            </div>
+
+            <div class="loading text-center py-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="mt-2 text-gray-600">Fetching your reviews... This may take a few moments.</p>
+            </div>
+
+            <div id="results" class="space-y-4">
+                <!-- Results will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function parseUrl() {
+            const urlInput = document.getElementById('url');
+            const loading = document.querySelector('.loading');
+            const results = document.getElementById('results');
+            
+            if (!urlInput.value) {
+                alert('Please enter a URL');
+                return;
+            }
+
+            loading.classList.add('active');
+            results.innerHTML = '';
+
+            try {
+                const response = await fetch('/parse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: urlInput.value }),
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    results.innerHTML = `<div class="text-red-500">${data.error}</div>`;
+                } else {
+                    const groupedReviews = {};
+                    data.forEach(review => {
+                        if (!groupedReviews[review.platform]) {
+                            groupedReviews[review.platform] = [];
+                        }
+                        groupedReviews[review.platform].push(review);
+                    });
+
+                    for (const [platform, reviews] of Object.entries(groupedReviews)) {
+                        const platformDiv = document.createElement('div');
+                        platformDiv.className = 'mb-6';
+                        platformDiv.innerHTML = `
+                            <h2 class="text-xl font-semibold mb-3 text-gray-800">${platform}</h2>
+                            <div class="space-y-2">
+                                ${reviews.map(review => `
+                                    <div class="p-3 bg-gray-50 rounded-md flex justify-between items-center">
+                                        <span class="font-medium">${review.title}</span>
+                                        <span class="text-yellow-500 text-lg tracking-wider">${review.rating || 'No rating'}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                        results.appendChild(platformDiv);
+                    }
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="text-red-500">Error: ${error.message}</div>`;
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html> 
