@@ -62,7 +62,7 @@ def parse_goodreads(url):
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
         reviews = []
-        
+
         # Find all book reviews
         for review in soup.find_all('tr', class_='bookalike review'):
             title = review.find('td', class_='field title')
@@ -74,6 +74,54 @@ def parse_goodreads(url):
         return reviews
     except Exception as e:
         return {'error': str(e)}
+
+def parse_rateyourmusic(url):
+    try:
+        match = re.search(r'rateyourmusic\.com/~([^/?]+)', url)
+        if not match:
+            return {'error': 'Could not extract username. Use format: https://rateyourmusic.com/~username'}
+
+        username = match.group(1)
+        base_url = f'https://rateyourmusic.com/collection/{username}/r/'
+        headers = {'User-Agent': 'Mozilla/5.0 (compatible; MediaParser/1.0)'}
+        page = 1
+        all_reviews = []
+
+        while True:
+            page_url = f'{base_url}{page}/' if page > 1 else base_url
+            response = requests.get(page_url, headers=headers)
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            reviews = []
+            for item in soup.find_all('div', class_='or_q_albumartist'):
+                title_tag = item.find('a', class_='album')
+                if not title_tag:
+                    continue
+                title = title_tag.text.strip()
+
+                artist_tag = item.find('a', class_='artist')
+                artist = artist_tag.text.strip() if artist_tag else ''
+
+                rating_tag = item.find(class_='rating_num')
+                rating = rating_tag.text.strip() if rating_tag else 'No rating'
+
+                reviews.append({
+                    'title': f'{artist} - {title}' if artist else title,
+                    'rating': rating,
+                    'platform': 'RateYourMusic'
+                })
+
+            if not reviews:
+                break
+
+            all_reviews.extend(reviews)
+            page += 1
+
+        if not all_reviews:
+            return {'error': 'No ratings found. Make sure the profile is public and contains ratings.'}
+        return all_reviews
+    except Exception as e:
+        return {'error': f'Error parsing RateYourMusic: {str(e)}'}
 
 @app.route('/')
 def index():
@@ -88,6 +136,8 @@ def parse():
         results = parse_letterboxd(url)
     elif 'goodreads.com' in url:
         results = parse_goodreads(url)
+    elif 'rateyourmusic.com' in url:
+        results = parse_rateyourmusic(url)
     else:
         results = {'error': 'Unsupported platform'}
     

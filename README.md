@@ -1,35 +1,26 @@
-# Media Parser
+# MediaParser
 
-A web application that aggregates your reviews from various platforms like Letterboxd, Goodreads, and RateYourMusic.
-
-## Features
-- Input links to your profiles on different platforms
-- View all your reviews in one place
-- Clean and modern interface
-- Support for multiple platforms
+Paste in your profile URL from Letterboxd, Goodreads, or RateYourMusic and see all your ratings in one place. That's pretty much it.
 
 ## Setup
 
-1. Create a virtual environment:
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-2. Install dependencies:
-```bash
+source venv/bin/activate
 pip install -r requirements.txt
-```
-
-3. Run the application:
-```bash
 python app.py
 ```
 
-4. Open your browser and navigate to `http://localhost:5000`
+Then go to `http://localhost:5000`.
 
-## Supported Platforms
-- Letterboxd
-- Goodreads
-- RateYourMusic
-- (More platforms coming soon) 
+## Supported sites
+
+- **Letterboxd** — paste your profile URL (e.g. `letterboxd.com/username`)
+- **Goodreads** — paste your profile URL (titles only for now, ratings coming)
+- **RateYourMusic** — paste your profile URL (e.g. `rateyourmusic.com/~username`)
+
+## Notes
+
+RateYourMusic profiles need to be set to public. If you get no results, that's usually why.
+
+Letterboxd pulls every page of your films list, so it can take a moment if you've logged a lot.
